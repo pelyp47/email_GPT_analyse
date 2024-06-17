@@ -1,8 +1,8 @@
-#Initial setup
+# Initial setup
 
 Download packages via executing ```npm install``` in terminal (root folder)
 
-#.env
+# .env
 ```OPEN_API_TOKEN``` - project token given by OpenAI
 
 ```PAGE_SIZE``` - the max amount of emails that could possibly be sent+gotten in 1 month
@@ -11,8 +11,8 @@ Download packages via executing ```npm install``` in terminal (root folder)
 
 ```AFTER_PROMPT``` - text in the prompt to chatGPT, which will be after the emails content. Pls include the info for ChatGpt that prompt sequence is ended.
 
-#StartUp
-**In root directory: ```node index```**
+# StartUp
+***In root directory: ```node index```***
 
 The workflow:
 
@@ -31,7 +31,7 @@ print ```yes``` in node console
 the result of prompt will be printed in console
 
 
-**In root directory: ```node index --fast```**
+***In root directory: ```node index --fast```***
 
 The workflow:
 
