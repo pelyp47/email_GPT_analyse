@@ -1,39 +1,54 @@
 const fs = require('fs');
-const prompt = require('prompt-sync')();
 const dotenv = require('dotenv')
-const readline = require('readline');
+const util = require('util');
+const exec = util.promisify(require('child_process').exec);
+// const path = require('path')
 
 dotenv.config()
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
 
-function getUserApproval() {
-  return new Promise((resolve) => {
-    rl.question('Do you want to proceed? (yes/no) ', (answer) => {
-      resolve(answer.toLowerCase());
-    });
-  });
-}
 // Specify the path to your JSON file containing email data
 const jsonFilePath = './messages.json';
 
-function filterObjectsByDateRange(objects) {
-    const today = new Date();
-  
-    const startDate = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
-  
-    const filteredObjects = objects.filter(obj => {
-      return new Date(obj.date) >= startDate && new Date(obj.date) <= today;
-    });
-  
-    return filteredObjects;
-  }
+function calculateDateQuery(input, type) {
+    let currentDate = new Date();
+
+    if (input.toLowerCase() === 'now' || input.trim() === '') {
+        let year = currentDate.getFullYear();
+        let month = String(currentDate.getMonth() + 1).padStart(2, '0');
+        let day = String(currentDate.getDate()).padStart(2, '0');
+        return `${type} ${year}-${month}-${day}`;
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+        currentDate = new Date(input);
+    } else {
+        let matches = input.match(/^(\d+)\s*(month|year|day)$/);
+        if (matches) {
+            let number = parseInt(matches[1]);
+            let unit = matches[2];
+
+            if (unit === 'month') {
+                currentDate.setMonth(currentDate.getMonth() - number);
+            } else if (unit === 'year') {
+                currentDate.setFullYear(currentDate.getFullYear() - number);
+            } else if (unit === 'day') {
+                currentDate.setDate(currentDate.getDate() - number);
+            }
+        } else {
+            return ""
+        }
+    }
+
+    let year = currentDate.getFullYear();
+    let month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    let day = String(currentDate.getDate()).padStart(2, '0');
+
+    return `${type} ${year}-${month}-${day}`;
+}
 
 function extractIds(emails) {
-    return "text.json <= himalaya -o=json read "+ filterObjectsByDateRange(emails).map(email => email.id).join(' ');
+    return process.env.HIMALAYA_PATH+ " -o=json message read "+ emails.map(email => email.id).join(' ')+" > ./text.json";
 }
 
 
@@ -64,6 +79,9 @@ async function sendMessageToChatGPT(prompt) {
 
     // Iterate through chunks and send requests
     for (let i=0; i< chunks.length; i++) {
+        process.stdout.moveCursor(-`${i}/${chunks.length}`.length, 0)
+        process.stdout.clearLine(1)
+        process.stdout.write(`${i}/${chunks.length}`)
     const chunk = chunks[i]
     const response = await fetch(apiUrl, {
         method: 'POST',
@@ -93,18 +111,14 @@ async function main() {
 
     try {
        if(!process.argv.includes("--fast")) {
-        console.log(`messages.json <= himalaya list -o=json --page-size=${process.env.PAGE_SIZE}`);
-        const approval = await getUserApproval()
-        if (approval=="yes") {
+            // console.log(`messages.json <= himalaya list -o=json --page-size=${process.env.PAGE_SIZE}`);
+            await exec(`${process.env.HIMALAYA_PATH} -o=json envelope list ${calculateDateQuery(process.env.DATE_TO, "before")} and ${calculateDateQuery(process.env.DATE_FROM, "after")} > ./messages.json`)
             const emails = await readFileContent("messages.json")
             const command = extractIds(JSON.parse(emails))
-            console.log(command)
-            const approval1 = await getUserApproval()
-            if(approval1=="yes") {
-                const text = await readFileContent("text.json")
-                sendMessageToChatGPT(process.env.BEFORE_PROMPT+text+process.env.AFTER_PROMPT)
-            }
-        }
+            await exec(command)
+            const text = await readFileContent("text.json")
+            sendMessageToChatGPT(process.env.BEFORE_PROMPT+text+process.env.AFTER_PROMPT)
+            
        } else {
         const text = await readFileContent("text.json")
         sendMessageToChatGPT(text)

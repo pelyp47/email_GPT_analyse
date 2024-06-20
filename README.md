@@ -2,10 +2,16 @@
 
 Download packages via executing ```npm install``` in terminal (root folder)
 
+Download himalaya 1.0.0-beta.4
+
 # .env
 ```OPEN_API_TOKEN``` - project token given by OpenAI
 
-```PAGE_SIZE``` - the max amount of emails that could possibly be sent+gotten in 1 month
+```HIMALAYA_PATH``` - the location of downloaded himalaya command script. You can call ```type himalaya``` in terminal to find out the location of executable script *(if you downloaded the repo, use pathToProj/target/debug/himalaya)*. The path you are inserting in ```HIMALAYA_PATH``` shoud be absolute.  Please make sure himalaya 1.0.0-beta.4 is downloaded properly.
+
+```DATE_TO``` - the filter option which gives an oportunity to select emails before specific date. Format: ```"[number ]day|month|year|now" | "yyyy-mm-dd" | ""```. *Empty string is considered as "now". EX: "2 year", "2024-06-10", "", "now", "month".
+
+```DATE_FROM``` = the filter option which gives an oportunity to select emails after specific date. Format: ```"[number ]day|month|year|now" | "yyyy-mm-dd" | ""```. *Empty string is considered as "now". EX: "2 year", "2024-06-10", "", "now", "month".
 
 ```BEFORE_PROMPT``` - text in the prompt to chatGPT, which will be before the emails content. Pls include the info for ChatGpt that prompt will be splitted into smaller pieces.
 
@@ -16,25 +22,19 @@ Download packages via executing ```npm install``` in terminal (root folder)
 
 The workflow:
 
-input the command in himalaya terminal ```himalaya list -o=json --page-size=...```, which will be displayed in console
+The emails gotten from himalaya are combined in large text
 
-the result of command (email object/objects) put in ```messages.json``` in root folder
+The text from previous step is sent to chatGPT by chunks
 
-print ```yes``` in node console
-
-input the command in himalaya terminal ```himalaya -o=json read ...```, which will be displayed in console
-
-the result of command (email/emails contert) paste in ```text.json``` in root folder
-
-print ```yes``` in node console
-
-the result of prompt will be printed in console
+The result will show up in console
 
 
 ***In root directory: ```node index --fast```***
 
 The workflow:
 
-*the text.json in root folder should be filled with email/emails content
+Skips the build step
 
-the result of prompt will be printed in console
+Sends emails which were sent during the previous time
+
+The result will be in console
